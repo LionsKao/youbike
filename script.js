@@ -17,7 +17,7 @@ pillWarnTooltip.id = 'pillWarnTooltip';
 pillWarnTooltip.className = 'pill-warn-tooltip';
 document.body.appendChild(pillWarnTooltip);
 let pillWarnTimer = null;
-function showPillWarning(anchorEl, text) {
+function showPillWarning(anchorEl, text, persist) {
   const rect = anchorEl.getBoundingClientRect();
   pillWarnTooltip.textContent = text;
   const half = pillWarnTooltip.offsetWidth / 2;
@@ -30,7 +30,13 @@ function showPillWarning(anchorEl, text) {
   pillWarnTooltip.style.setProperty('--arrow-left', arrowPct + '%');
   pillWarnTooltip.classList.add('visible');
   clearTimeout(pillWarnTimer);
-  pillWarnTimer = setTimeout(() => pillWarnTooltip.classList.remove('visible'), 1800);
+  if (!persist) {
+    pillWarnTimer = setTimeout(() => pillWarnTooltip.classList.remove('visible'), 1800);
+  }
+}
+function hidePillWarning() {
+  clearTimeout(pillWarnTimer);
+  pillWarnTooltip.classList.remove('visible');
 }
 
 function closeModal() {
@@ -324,24 +330,39 @@ function openLocationRequestModal(onFail) {
   });
 }
 
+function setLocationLoading(loading) {
+  fabLocation.disabled = loading;
+  fabLocation.classList.toggle('is-loading', loading);
+  if (loading) {
+    showPillWarning(fabLocation, '正在取得車輛和定位資訊', true);
+  } else {
+    hidePillWarning();
+  }
+}
+
 fabLocation.addEventListener('click', () => {
+  if (fabLocation.disabled) return;
   if (fabDebugFake) fabDebugFake.classList.remove('active');
-  const notifyUpdated = () => showPillWarning(fabLocation, '已更新車輛和定位資訊');
-  if (getDebugPos()) { doGeolocate(undefined, undefined, notifyUpdated); return; }
-  if (!('geolocation' in navigator)) return;
-  if (hasGeoGrantedBefore()) { doGeolocate(showLocationBlockedModal, undefined, notifyUpdated); return; }
+  setLocationLoading(true);
+  const finish = () => setLocationLoading(false);
+  const notifyUpdated = () => { setLocationLoading(false); showPillWarning(fabLocation, '已更新車輛和定位資訊'); };
+  const onDenied = () => { finish(); showLocationBlockedModal(); };
+  if (getDebugPos()) { doGeolocate(undefined, finish, notifyUpdated); return; }
+  if (!('geolocation' in navigator)) { finish(); return; }
+  if (hasGeoGrantedBefore()) { doGeolocate(onDenied, finish, notifyUpdated); return; }
   if ('permissions' in navigator) {
     navigator.permissions.query({ name: 'geolocation' }).then(status => {
       if (status.state === 'granted') {
-        doGeolocate(showLocationBlockedModal, undefined, notifyUpdated);
+        doGeolocate(onDenied, finish, notifyUpdated);
       } else if (status.state === 'denied') {
-        showLocationBlockedModal();
+        onDenied();
       } else {
+        finish();
         openLocationRequestModal();
       }
-    }).catch(() => doGeolocate(showLocationBlockedModal, undefined, notifyUpdated));
+    }).catch(() => doGeolocate(onDenied, finish, notifyUpdated));
   } else {
-    doGeolocate(showLocationBlockedModal, undefined, notifyUpdated);
+    doGeolocate(onDenied, finish, notifyUpdated);
   }
 });
 

@@ -209,6 +209,7 @@ footer{
 .fab-btn.fab-qrcode{ background:#fff; }
 .fab-btn.fab-openapp{ background:var(--coral); }
 .fab-btn.fab-navigate{ background:var(--sky-blue); }
+.fab-btn.is-loading{ background:#B9B9B9 !important; pointer-events:none; }
 
 .fab-stack:not(.fab-stack-left) .fab-btn{ box-shadow:0 0 0 8px #fff; }
 .fab-stack:not(.fab-stack-left){ filter:url(#fab-outline); }
