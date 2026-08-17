@@ -30,6 +30,10 @@ npx wrangler pages dev . --port 1234
 npx wrangler pages deploy . --project-name=youbike
 ```
 
+## Credits
+
+App icons: [Bicycle icon](https://www.flaticon.com/free-icon/bicycle_9842417) by [Magnific](https://www.flaticon.com/authors/magnific) from [www.flaticon.com](https://www.flaticon.com/)
+
 ## License
 
 [MIT](LICENSE)
