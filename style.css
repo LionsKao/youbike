@@ -226,7 +226,7 @@ footer{
   content:""; position:absolute; top:100%; left:50%; transform:translateX(-50%);
   border-width:6px 6px 0 6px; border-style:solid; border-color:#fff transparent transparent transparent;
 }
-.qr-tooltip{ padding:10px; background:#fff; border-radius:12px; box-shadow:0 6px 16px rgba(0,0,0,0.18); }
+.qr-tooltip{ position:fixed; left:0; bottom:0; padding:10px; background:#fff; border-radius:12px; box-shadow:0 6px 16px rgba(0,0,0,0.18); }
 .qr-tooltip img{ display:block; width:132px; height:132px; }
 
 .pill-warn-tooltip{

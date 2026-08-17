@@ -388,13 +388,28 @@ openAppBtn.addEventListener('click', () => {
 
 const qrCodeBtn = document.getElementById('qrCodeBtn');
 const qrCodeTooltip = document.getElementById('qrCodeTooltip');
+// Moved out of .fab-stack (which has an SVG `filter` for the outline effect) because
+// filtered elements clip their descendants to the filter region, cutting this popup off.
+document.body.appendChild(qrCodeTooltip);
+
+function positionQrTooltip() {
+  const rect = qrCodeBtn.getBoundingClientRect();
+  const half = qrCodeTooltip.offsetWidth / 2;
+  const margin = 8;
+  const anchorCenterX = rect.left + rect.width / 2;
+  const centerX = Math.max(half + margin, Math.min(window.innerWidth - half - margin, anchorCenterX));
+  qrCodeTooltip.style.left = centerX + 'px';
+  qrCodeTooltip.style.bottom = (window.innerHeight - rect.top) + 'px';
+}
+
 qrCodeBtn.addEventListener('click', e => {
   e.stopPropagation();
+  if (!qrCodeTooltip.classList.contains('visible')) positionQrTooltip();
   qrCodeTooltip.classList.toggle('visible');
 });
 document.addEventListener('click', e => {
   if (!qrCodeTooltip.classList.contains('visible')) return;
-  if (e.target.closest('#qrCodeBtnWrap')) return;
+  if (e.target.closest('#qrCodeBtnWrap') || e.target.closest('#qrCodeTooltip')) return;
   qrCodeTooltip.classList.remove('visible');
 });
 
