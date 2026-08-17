@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#7C5CFC">
+<title>🚲</title>
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+<link rel="stylesheet" href="style.css?v=1">
+</head>
+<body>
+
+<svg style="position:absolute;width:0;height:0;visibility:hidden" aria-hidden="true">
+  <filter id="fab-outline" x="-50%" y="-50%" width="200%" height="200%" color-interpolation-filters="sRGB">
+    <feMorphology in="SourceAlpha" operator="dilate" radius="2" result="dilated" />
+    <feFlood flood-color="#454545" result="color" />
+    <feComposite in="color" in2="dilated" operator="in" result="stroke" />
+    <feMerge>
+      <feMergeNode in="stroke" />
+      <feMergeNode in="SourceGraphic" />
+    </feMerge>
+  </filter>
+</svg>
+
+<div class="compass-modal-overlay" id="modalOverlay" style="display:none">
+  <div class="compass-modal">
+    <div class="compass-modal-title" id="modalTitle"></div>
+    <div class="compass-modal-body" id="modalBody" style="display:none"></div>
+    <div class="compass-modal-actions" id="modalActions"></div>
+  </div>
+</div>
+
+<div class="loading-state" id="loadingState"><i class="fa-solid fa-arrow-rotate-right"></i></div>
+
+<div class="card-grid" id="cardGrid" style="display:none"></div>
+
+<footer></footer>
+
+<div class="fab-stack">
+  <span class="tooltip-wrap" id="qrCodeBtnWrap">
+    <span class="hint-tooltip qr-tooltip" id="qrCodeTooltip"><img src="icons/qrcode.png" width="132" height="132" alt="網站 QR Code" loading="lazy"></span>
+    <button type="button" class="fab-btn fab-qrcode" id="qrCodeBtn" aria-label="顯示 QR Code" title="顯示 QR Code">
+      <i class="fa-solid fa-qrcode"></i>
+    </button>
+  </span>
+  <button type="button" class="fab-btn fab-openapp" id="openAppBtn" aria-label="開啟 YouBike App" title="開啟 YouBike App">
+    <i class="fa-solid fa-bicycle"></i>
+  </button>
+  <button type="button" class="fab-btn fab-location" id="fabLocation" aria-label="重新取得定位" title="重新取得定位">
+    <i class="fa-solid fa-location-crosshairs"></i>
+  </button>
+  <button type="button" class="fab-btn fab-navigate" id="fabNavigate" aria-label="在 Google Maps 開啟站點" title="在 Google Maps 開啟站點">
+    <i class="fa-solid fa-diamond-turn-right"></i>
+  </button>
+</div>
+
+<div class="fab-stack fab-stack-left">
+  <button type="button" class="fab-btn fab-debug-pwa" id="fabDebugPwa" aria-label="切換 PWA 模式" title="切換 PWA 模式">
+    <i class="fa-solid fa-mobile-screen-button"></i>
+  </button>
+  <button type="button" class="fab-btn fab-debug-fake" id="fabDebugFake" aria-label="假定位到萬華266號綠地" title="假定位到萬華266號綠地">
+    <i class="fa-solid fa-tree"></i>
+  </button>
+</div>
+
+<script src="script.js?v=69"></script>
+</body>
+</html>
