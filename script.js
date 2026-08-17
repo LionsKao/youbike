@@ -306,9 +306,9 @@ function requestLocation() {
       } else {
         openLocationRequestModal(() => fetchLiveData());
       }
-    }).catch(() => doGeolocate(showLocationBlockedModal, () => fetchLiveData()));
+    }).catch(() => openLocationRequestModal(() => fetchLiveData()));
   } else {
-    doGeolocate(showLocationBlockedModal, () => fetchLiveData());
+    openLocationRequestModal(() => fetchLiveData());
   }
 }
 
@@ -360,9 +360,10 @@ fabLocation.addEventListener('click', () => {
         finish();
         openLocationRequestModal();
       }
-    }).catch(() => doGeolocate(onDenied, finish, notifyUpdated));
+    }).catch(() => { finish(); openLocationRequestModal(); });
   } else {
-    doGeolocate(onDenied, finish, notifyUpdated);
+    finish();
+    openLocationRequestModal();
   }
 });
 
