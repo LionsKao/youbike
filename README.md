@@ -4,6 +4,8 @@
 
 A lightweight PWA that shows nearby YouBike station availability in real time, with geolocation, QR code sharing, and one-tap navigation to Google Maps.
 
+<img src="screenshots/taipei-main-station.png" alt="App screenshot showing YouBike stations near Taipei Main Station" width="320">
+
 ## Features
 
 - 📍 依目前位置自動列出最近的 YouBike 站點與距離
