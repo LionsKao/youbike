@@ -24,13 +24,6 @@ A lightweight PWA that shows nearby YouBike station availability in real time, w
 npx wrangler pages dev . --port 1234
 ```
 
-需要在專案根目錄建立 `.dev.vars`（不會被 commit）：
-
-```
-TDX_CLIENT_ID=your_client_id
-TDX_CLIENT_SECRET=your_client_secret
-```
-
 ## Deploy
 
 ```bash
