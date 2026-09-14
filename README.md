@@ -10,8 +10,8 @@ A lightweight PWA that shows nearby YouBike station availability in real time, w
 
 ## Features
 
-- 📍 依目前位置自動列出最近的 YouBike 站點與距離
-- 🚲 即時顯示可借車輛數 / 可還空位數
+- 📍 依目前位置自動列出全台最近的 YouBike 站點與距離
+- 🚲 即時顯示可借車輛數 / 可還空位數，含電動輔助車數量
 - 🔄 每 30 秒自動刷新一次
 - 📷 顯示 QR Code，方便分享網站給他人
 - 🧭 一鍵在 Google Maps 開啟站點導航
@@ -20,9 +20,16 @@ A lightweight PWA that shows nearby YouBike station availability in real time, w
 ## Stack
 
 - 前端：純 HTML / CSS / JavaScript（無框架）
-- 後端：[Cloudflare Pages Functions](https://developers.cloudflare.com/pages/functions/)（[`functions/api/youbike.js`](functions/api/youbike.js)）作為 API proxy，抓取 YouBike 官方開放資料並依距離排序
+- 後端：[Cloudflare Pages Functions](https://developers.cloudflare.com/pages/functions/)（[`functions/api/youbike.js`](functions/api/youbike.js)）作為 API proxy，透過[交通部運輸資料流通服務（TDX）](https://tdx.transportdata.tw/)抓取全台各縣市公共自行車即時資料並依距離排序
 
 ## Local development
+
+Requires a free TDX account (see below) with credentials in `.dev.vars`:
+
+```
+TDX_CLIENT_ID=xxxx
+TDX_CLIENT_SECRET=xxxx
+```
 
 ```bash
 npx wrangler pages dev . --port 1234
@@ -33,6 +40,15 @@ npx wrangler pages dev . --port 1234
 ```bash
 npx wrangler pages deploy . --project-name=youbike
 ```
+
+Also requires `TDX_CLIENT_ID` / `TDX_CLIENT_SECRET` set as Cloudflare Pages environment variables (secrets) — see the project's Settings → Environment variables in the Cloudflare dashboard, or:
+
+```bash
+npx wrangler pages secret put TDX_CLIENT_ID --project-name=youbike
+npx wrangler pages secret put TDX_CLIENT_SECRET --project-name=youbike
+```
+
+Get these by registering a free account at [tdx.transportdata.tw](https://tdx.transportdata.tw/), then creating an API application under 會員中心 (member center) to obtain a Client ID / Client Secret.
 
 ## Credits
 
