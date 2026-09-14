@@ -1,6 +1,6 @@
 const DATA_URL = '/api/youbike';
 const REFRESH_MS = 30000;
-const NEAREST_COUNT = 5;
+const NEAREST_COUNT = 3;
 
 const cardGrid = document.getElementById('cardGrid');
 const loadingState = document.getElementById('loadingState');
@@ -127,6 +127,25 @@ function dialSvg(available, total, color) {
   </svg>`;
 }
 
+function breakdownRow(s) {
+  if (s.general == null && s.electric == null && s.returnable == null) return '';
+  return `
+    <div class="breakdown-row">
+      <div class="breakdown-item b-general">
+        <div class="b-num">${s.general != null ? s.general : '--'}</div>
+        <div class="b-label">一般</div>
+      </div>
+      <div class="breakdown-item b-electric">
+        <div class="b-num">${s.electric != null ? s.electric : '--'}</div>
+        <div class="b-label">電動</div>
+      </div>
+      <div class="breakdown-item b-dock">
+        <div class="b-num">${s.returnable != null ? s.returnable : '--'}</div>
+        <div class="b-label">可停</div>
+      </div>
+    </div>`;
+}
+
 function stationCard(s, featured) {
   const color = ratioColor(s.available, s.total, s.returnable);
   const subLine = s.dist != null ? `<div class="site-sub site-dist">${formatDistance(s.dist)}</div>` : '';
@@ -140,7 +159,54 @@ function stationCard(s, featured) {
           <div class="num" style="color:${color.text}">${s.available != null ? s.available : '--'}</div>
         </div>
       </div>
+      ${featured ? breakdownRow(s) : ''}
     </div>`;
+}
+
+let swapAnimating = false;
+
+function animateCardSwap(prevRects) {
+  const cards = cardGrid.querySelectorAll('.station-card');
+  let pending = 0;
+
+  cards.forEach(card => {
+    const prev = prevRects.get(card.dataset.sno);
+    if (!prev) return;
+    const next = card.getBoundingClientRect();
+    const dx = prev.left - next.left;
+    const dy = prev.top - next.top;
+    const sx = prev.width / next.width;
+    const sy = prev.height / next.height;
+    if (!dx && !dy && sx === 1 && sy === 1) return;
+
+    pending++;
+    card.style.transformOrigin = 'top left';
+    card.style.transition = 'none';
+    card.style.transform = `translate(${dx}px, ${dy}px) scale(${sx}, ${sy})`;
+    card.style.willChange = 'transform';
+
+    const breakdown = card.querySelector('.breakdown-row');
+    if (breakdown) breakdown.style.opacity = '0';
+
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        card.style.transition = 'transform 0.32s cubic-bezier(0.4, 0, 0.2, 1)';
+        card.style.transform = '';
+        if (breakdown) {
+          breakdown.style.transition = 'opacity 0.25s ease 0.15s';
+          breakdown.style.opacity = '1';
+        }
+        card.addEventListener('transitionend', () => {
+          card.style.transition = '';
+          card.style.willChange = '';
+          pending--;
+          if (pending === 0) swapAnimating = false;
+        }, { once: true });
+      });
+    });
+  });
+
+  if (pending === 0) swapAnimating = false;
 }
 
 function render(list) {
@@ -156,13 +222,27 @@ function render(list) {
 }
 
 cardGrid.addEventListener('click', e => {
-  const nameEl = e.target.closest('.site-name');
-  if (!nameEl) return;
-  const card = nameEl.closest('.station-card');
+  const card = e.target.closest('.station-card');
   if (!card) return;
   const station = lastList.find(s => s.sno === card.dataset.sno);
   if (!station) return;
-  window.open(`https://www.google.com/maps/search/?api=1&query=${station.lat},${station.lng}`, '_blank');
+
+  const nameEl = e.target.closest('.site-name');
+  if (nameEl) {
+    window.open(`https://www.google.com/maps/search/?api=1&query=${station.lat},${station.lng}`, '_blank');
+    return;
+  }
+
+  if (lastList[0] === station || swapAnimating) return;
+
+  const prevRects = new Map();
+  cardGrid.querySelectorAll('.station-card').forEach(c => {
+    prevRects.set(c.dataset.sno, c.getBoundingClientRect());
+  });
+
+  swapAnimating = true;
+  render([station, ...lastList.filter(s => s !== station)]);
+  animateCardSwap(prevRects);
 });
 
 let dataErrorModalShown = false;
@@ -201,6 +281,8 @@ async function fetchLiveData() {
         total: s.Quantity,
         available: userPos ? s.available_rent_bikes : null,
         returnable: userPos ? s.available_return_bikes : null,
+        general: userPos ? s.general_bikes : null,
+        electric: userPos ? s.electric_bikes : null,
         dist: s.dist,
       }));
       dataErrorModalShown = false;
@@ -415,7 +497,7 @@ document.addEventListener('click', e => {
 });
 
 requestLocation();
-setInterval(() => { if (firstLoadDone) fetchLiveData(); }, REFRESH_MS);
+// setInterval(() => { if (firstLoadDone) fetchLiveData(); }, REFRESH_MS);
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
