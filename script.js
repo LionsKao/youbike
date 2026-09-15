@@ -129,6 +129,13 @@ function dialSvg(available, total, color) {
 }
 
 const UNKNOWN_COLOR = '#9A8C7E';
+const MAX_DISPLAY_COUNT = 99;
+
+// Caps a count at 2 digits for display only — ratio/color logic elsewhere
+// still uses the real value, this only affects what text is shown.
+function displayCount(value) {
+  return value == null ? value : Math.min(value, MAX_DISPLAY_COUNT);
+}
 
 // Split-flap "flip" reveal: only rendered as an animated flip when the shown
 // text actually changes from the last render; otherwise a plain static span.
@@ -142,9 +149,9 @@ function flipSpan(oldText, newText, oldColor, newColor) {
 
 function breakdownItem(cls, key, value, icon, knownColor, prev) {
   const known = value != null;
-  const newText = known ? value : '--';
+  const newText = known ? displayCount(value) : '--';
   const prevKnown = !!prev && prev[key] != null;
-  const oldText = prev ? (prevKnown ? prev[key] : '--') : '--';
+  const oldText = prev ? (prevKnown ? displayCount(prev[key]) : '--') : '--';
   const oldColor = prevKnown ? knownColor : UNKNOWN_COLOR;
   const newColor = known ? knownColor : UNKNOWN_COLOR;
   return `
@@ -167,9 +174,9 @@ function stationCard(s, featured) {
   const subLine = `<div class="site-sub site-dist${distKnown ? '' : ' unknown'}">${distKnown ? formatDistance(s.dist) : '--'}</div>`;
 
   const availKnown = s.available != null;
-  const newNumText = availKnown ? s.available : '--';
+  const newNumText = availKnown ? displayCount(s.available) : '--';
   const prevAvailKnown = !!prev && prev.available != null;
-  const oldNumText = prev ? (prevAvailKnown ? prev.available : '--') : '--';
+  const oldNumText = prev ? (prevAvailKnown ? displayCount(prev.available) : '--') : '--';
   const oldNumColor = prevAvailKnown ? color.text : UNKNOWN_COLOR;
   const newNumColor = availKnown ? color.text : UNKNOWN_COLOR;
   const numHtml = flipSpan(String(oldNumText), String(newNumText), oldNumColor, newNumColor);

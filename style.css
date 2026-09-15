@@ -121,8 +121,8 @@ body.pwa-mode{
   perspective:240px;
 }
 .flip-card-inner{
-  position:relative;
-  display:inline-block;
+  display:inline-grid;
+  justify-items:center;
   transition:transform 0.5s cubic-bezier(.45,0,.2,1);
   -webkit-transform-style:preserve-3d;
   transform-style:preserve-3d;
@@ -131,17 +131,13 @@ body.pwa-mode{
   transform:rotateX(-180deg);
 }
 .flip-face{
+  grid-area:1 / 1;
   -webkit-backface-visibility:hidden;
   backface-visibility:hidden;
-  display:block;
 }
 .flip-face.back{
-  position:absolute;
-  top:0; left:0;
-  width:100%;
   transform:rotateX(180deg);
 }
-.b-num.unknown{ color:#9A8C7E; }
 
 .station-card.featured{
   padding:32px 32px 32px;
