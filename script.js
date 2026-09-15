@@ -163,7 +163,7 @@ function breakdownItem(cls, key, value, icon, knownColor, prev) {
 
 function breakdownRow(s, prev) {
   return `
-    <div class="breakdown-row">${breakdownItem('b-general', 'general', s.general, 'fa-solid fa-bicycle', '#3F9C7A', prev)}${breakdownItem('b-electric', 'electric', s.electric, 'fa-solid fa-bolt', '#B8860B', prev)}${breakdownItem('b-dock', 'returnable', s.returnable, 'fa-solid fa-square-parking', 'var(--sky-deep)', prev)}
+    <div class="breakdown-row">${breakdownItem('b-general', 'general', s.general, 'fa-solid fa-bicycle fa-fw', '#3F9C7A', prev)}${breakdownItem('b-electric', 'electric', s.electric, 'fa-solid fa-bolt fa-fw', '#B8860B', prev)}${breakdownItem('b-dock', 'returnable', s.returnable, 'fa-solid fa-square-parking fa-fw', 'var(--sky-deep)', prev)}
     </div>`;
 }
 

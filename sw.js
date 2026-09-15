@@ -1,5 +1,5 @@
-const CACHE_NAME = 'youbike-shell-v73';
-const SHELL_ASSETS = ['/', '/index.html', '/script.js?v=73', '/style.css?v=73', '/manifest.json', '/icon-192.png', '/icon-512.png'];
+const CACHE_NAME = 'youbike-shell-v75';
+const SHELL_ASSETS = ['/', '/index.html', '/script.js?v=75', '/style.css?v=75', '/manifest.json', '/icon-192.png', '/icon-512.png'];
 
 self.addEventListener('install', event => {
   event.waitUntil(
