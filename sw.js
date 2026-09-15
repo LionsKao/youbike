@@ -1,5 +1,5 @@
-const CACHE_NAME = 'youbike-shell-v69';
-const SHELL_ASSETS = ['/', '/index.html', '/script.js?v=69', '/manifest.json', '/icon-192.png', '/icon-512.png'];
+const CACHE_NAME = 'youbike-shell-v73';
+const SHELL_ASSETS = ['/', '/index.html', '/script.js?v=73', '/style.css?v=73', '/manifest.json', '/icon-192.png', '/icon-512.png'];
 
 self.addEventListener('install', event => {
   event.waitUntil(
@@ -21,7 +21,7 @@ self.addEventListener('fetch', event => {
   if (url.pathname.startsWith('/api/')) return;
 
   event.respondWith(
-    fetch(event.request)
+    fetch(event.request, { cache: 'no-store' })
       .then(res => {
         const copy = res.clone();
         caches.open(CACHE_NAME).then(cache => cache.put(event.request, copy));
