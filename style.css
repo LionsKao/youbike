@@ -35,7 +35,28 @@ body.pwa-mode{
   padding-top:calc(34px + env(safe-area-inset-top, 0px));
   padding-bottom:calc(80px + env(safe-area-inset-bottom, 0px));
   -webkit-tap-highlight-color:transparent;
+  overscroll-behavior-y:contain;
 }
+
+.pull-refresh{
+  position:fixed;
+  top:calc(env(safe-area-inset-top, 0px) + 10px);
+  left:50%;
+  width:40px;
+  height:40px;
+  border-radius:50%;
+  background:#fff;
+  border:3px solid var(--ink);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:15px;
+  color:var(--sky-deep);
+  z-index:55;
+  transform:translate(-50%, -60px);
+  pointer-events:none;
+}
+.pull-refresh.spinning i{ animation:pull-spin 0.7s linear infinite; }
 
 .card-grid{
   display:flex;
@@ -57,7 +78,7 @@ body.pwa-mode{
   cursor:default;
   min-width:0;
 }
-.station-card .site-name{ font-family:'Fredoka',sans-serif; font-weight:600; font-size:16px; margin-bottom:5px; text-align:center; overflow:hidden; cursor:pointer; }
+.station-card .site-name{ font-family:'Fredoka',sans-serif; font-weight:600; font-size:16px; line-height:1.4; margin-bottom:5px; text-align:center; overflow:hidden; cursor:pointer; }
 .station-card .site-name span{
   display:block;
   white-space:nowrap;
@@ -66,6 +87,7 @@ body.pwa-mode{
 }
 .station-card .site-sub{ font-size:12px; color:#9A8C7E; margin-bottom:12px; text-align:center; }
 .station-card .site-dist{ color:var(--sky-deep); font-weight:700; }
+.station-card .site-dist.unknown{ color:#9A8C7E; }
 
 .breakdown-row{
   display:flex;
@@ -88,9 +110,34 @@ body.pwa-mode{
   font-size:11px;
   color:#9A8C7E;
 }
-.b-general .b-num{ color:#3F9C7A; }
-.b-electric .b-num{ color:#B8860B; }
-.b-dock .b-num{ color:var(--sky-deep); }
+
+.flip-card{
+  display:inline-block;
+  -webkit-perspective:240px;
+  perspective:240px;
+}
+.flip-card-inner{
+  position:relative;
+  display:inline-block;
+  transition:transform 0.5s cubic-bezier(.45,0,.2,1);
+  -webkit-transform-style:preserve-3d;
+  transform-style:preserve-3d;
+}
+.flip-card.flipped .flip-card-inner{
+  transform:rotateX(-180deg);
+}
+.flip-face{
+  -webkit-backface-visibility:hidden;
+  backface-visibility:hidden;
+  display:block;
+}
+.flip-face.back{
+  position:absolute;
+  top:0; left:0;
+  width:100%;
+  transform:rotateX(180deg);
+}
+.b-num.unknown{ color:#9A8C7E; }
 
 .station-card.featured{
   padding:32px 32px 32px;

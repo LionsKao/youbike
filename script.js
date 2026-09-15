@@ -84,6 +84,7 @@ modalOverlay.addEventListener('click', e => {
 let userPos = null;
 let lastList = [];
 let featuredStation = null;
+let prevValues = new Map();
 let firstLoadDone = false;
 
 function revealCardGrid() {
@@ -127,28 +128,52 @@ function dialSvg(available, total, color) {
   </svg>`;
 }
 
-function breakdownRow(s) {
-  if (s.general == null && s.electric == null && s.returnable == null) return '';
+const UNKNOWN_COLOR = '#9A8C7E';
+
+// Split-flap "flip" reveal: only rendered as an animated flip when the shown
+// text actually changes from the last render; otherwise a plain static span.
+function flipSpan(oldText, newText, oldColor, newColor) {
+  if (oldText === newText) return `<span style="color:${newColor}">${newText}</span>`;
+  return `<span class="flip-card"><span class="flip-card-inner">` +
+    `<span class="flip-face front" style="color:${oldColor}">${oldText}</span>` +
+    `<span class="flip-face back" style="color:${newColor}">${newText}</span>` +
+    `</span></span>`;
+}
+
+function breakdownItem(cls, key, value, label, knownColor, prev) {
+  const known = value != null;
+  const newText = known ? value : '--';
+  const prevKnown = !!prev && prev[key] != null;
+  const oldText = prev ? (prevKnown ? prev[key] : '--') : '--';
+  const oldColor = prevKnown ? knownColor : UNKNOWN_COLOR;
+  const newColor = known ? knownColor : UNKNOWN_COLOR;
   return `
-    <div class="breakdown-row">
-      <div class="breakdown-item b-general">
-        <div class="b-num">${s.general != null ? s.general : '--'}</div>
-        <div class="b-label">一般</div>
-      </div>
-      <div class="breakdown-item b-electric">
-        <div class="b-num">${s.electric != null ? s.electric : '--'}</div>
-        <div class="b-label">電動</div>
-      </div>
-      <div class="breakdown-item b-dock">
-        <div class="b-num">${s.returnable != null ? s.returnable : '--'}</div>
-        <div class="b-label">可停</div>
-      </div>
+      <div class="breakdown-item ${cls}">
+        <div class="b-num">${flipSpan(String(oldText), String(newText), oldColor, newColor)}</div>
+        <div class="b-label">${label}</div>
+      </div>`;
+}
+
+function breakdownRow(s, prev) {
+  return `
+    <div class="breakdown-row">${breakdownItem('b-general', 'general', s.general, '一般', '#3F9C7A', prev)}${breakdownItem('b-electric', 'electric', s.electric, '電動', '#B8860B', prev)}${breakdownItem('b-dock', 'returnable', s.returnable, '可停', 'var(--sky-deep)', prev)}
     </div>`;
 }
 
 function stationCard(s, featured) {
   const color = ratioColor(s.available, s.total, s.returnable);
-  const subLine = s.dist != null ? `<div class="site-sub site-dist">${formatDistance(s.dist)}</div>` : '';
+  const prev = prevValues.get(s.sno);
+  const distKnown = s.dist != null;
+  const subLine = `<div class="site-sub site-dist${distKnown ? '' : ' unknown'}">${distKnown ? formatDistance(s.dist) : '--'}</div>`;
+
+  const availKnown = s.available != null;
+  const newNumText = availKnown ? s.available : '--';
+  const prevAvailKnown = !!prev && prev.available != null;
+  const oldNumText = prev ? (prevAvailKnown ? prev.available : '--') : '--';
+  const oldNumColor = prevAvailKnown ? color.text : UNKNOWN_COLOR;
+  const newNumColor = availKnown ? color.text : UNKNOWN_COLOR;
+  const numHtml = flipSpan(String(oldNumText), String(newNumText), oldNumColor, newNumColor);
+
   return `
     <div class="station-card${featured ? ' featured' : ''}" data-sno="${s.sno}">
       <div class="site-name"><span>${s.name}</span></div>
@@ -156,10 +181,10 @@ function stationCard(s, featured) {
       <div class="dial-wrap">
         <div class="dial${featured ? ' large' : ''}">
           ${dialSvg(s.available, s.total, color)}
-          <div class="num" style="color:${color.text}">${s.available != null ? s.available : '--'}</div>
+          <div class="num">${numHtml}</div>
         </div>
       </div>
-      ${featured ? breakdownRow(s) : ''}
+      ${featured ? breakdownRow(s, prev) : ''}
     </div>`;
 }
 
@@ -219,6 +244,16 @@ function render(list) {
 
   cardGrid.innerHTML = featuredHtml + `<div class="card-grid-small">${restHtml}</div>`;
   revealCardGrid();
+
+  prevValues = new Map(list.map(s => [s.sno, {
+    available: s.available, general: s.general, electric: s.electric, returnable: s.returnable,
+  }]));
+
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      cardGrid.querySelectorAll('.flip-card').forEach(el => el.classList.add('flipped'));
+    });
+  });
 }
 
 cardGrid.addEventListener('click', e => {
@@ -422,12 +457,12 @@ function setLocationLoading(loading) {
   }
 }
 
-fabLocation.addEventListener('click', () => {
-  if (fabLocation.disabled) return;
+function refreshData(onDone) {
+  if (fabLocation.disabled) { if (onDone) onDone(); return; }
   if (fabDebugFake) fabDebugFake.classList.remove('active');
   setLocationLoading(true);
-  const finish = () => setLocationLoading(false);
-  const notifyUpdated = () => { setLocationLoading(false); showPillWarning(fabLocation, '已更新車輛和定位資訊'); };
+  const finish = () => { setLocationLoading(false); if (onDone) onDone(); };
+  const notifyUpdated = () => { setLocationLoading(false); showPillWarning(fabLocation, '已更新車輛和定位資訊'); if (onDone) onDone(); };
   const onDenied = () => { finish(); showLocationBlockedModal(); };
   if (getDebugPos()) { doGeolocate(undefined, finish, notifyUpdated); return; }
   if (!('geolocation' in navigator)) { finish(); return; }
@@ -447,7 +482,9 @@ fabLocation.addEventListener('click', () => {
     finish();
     openLocationRequestModal();
   }
-});
+}
+
+fabLocation.addEventListener('click', () => refreshData());
 
 const fabNavigate = document.getElementById('fabNavigate');
 fabNavigate.addEventListener('click', () => {
@@ -495,6 +532,11 @@ document.addEventListener('click', e => {
   if (e.target.closest('#qrCodeBtnWrap') || e.target.closest('#qrCodeTooltip')) return;
   qrCodeTooltip.classList.remove('visible');
 });
+
+function placeholderStation(i) {
+  return { sno: `placeholder-${i}`, name: '--', lat: null, lng: null, total: null, available: null, returnable: null, general: null, electric: null, dist: null };
+}
+render([placeholderStation(0), placeholderStation(1), placeholderStation(2)]);
 
 requestLocation();
 // setInterval(() => { if (firstLoadDone) fetchLiveData(); }, REFRESH_MS);
@@ -551,4 +593,48 @@ const isPwa = window.matchMedia('(display-mode: standalone)').matches
 
 if (isPwa) {
   document.body.classList.add('pwa-mode');
+
+  const pullRefresh = document.getElementById('pullRefresh');
+  const PULL_THRESHOLD = 64;
+  const PULL_MAX = 90;
+  let pullStartY = null;
+  let pullDist = 0;
+  let pullRefreshing = false;
+
+  function setPull(dist, animate) {
+    pullRefresh.style.transition = animate ? 'transform 0.25s ease' : 'none';
+    pullRefresh.style.transform = `translate(-50%, ${dist - 60}px)`;
+  }
+
+  document.addEventListener('touchstart', e => {
+    if (pullRefreshing || window.scrollY > 0) { pullStartY = null; return; }
+    pullStartY = e.touches[0].clientY;
+    pullDist = 0;
+  }, { passive: true });
+
+  document.addEventListener('touchmove', e => {
+    if (pullStartY == null || pullRefreshing) return;
+    const deltaY = e.touches[0].clientY - pullStartY;
+    if (deltaY <= 0) return;
+    pullDist = Math.min(deltaY * 0.5, PULL_MAX);
+    setPull(pullDist, false);
+    if (deltaY > 10) e.preventDefault();
+  }, { passive: false });
+
+  document.addEventListener('touchend', () => {
+    if (pullStartY == null) return;
+    pullStartY = null;
+    if (pullDist >= PULL_THRESHOLD) {
+      pullRefreshing = true;
+      pullRefresh.classList.add('spinning');
+      setPull(PULL_THRESHOLD, true);
+      refreshData(() => {
+        pullRefreshing = false;
+        pullRefresh.classList.remove('spinning');
+        setPull(0, true);
+      });
+    } else {
+      setPull(0, true);
+    }
+  });
 }
