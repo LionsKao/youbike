@@ -92,7 +92,7 @@ body.pwa-mode{
 .breakdown-row{
   display:flex;
   justify-content:center;
-  gap:14px;
+  gap:28px;
   margin-top:14px;
 }
 .breakdown-item{
@@ -107,8 +107,12 @@ body.pwa-mode{
   font-size:18px;
 }
 .breakdown-item .b-label{
-  font-size:11px;
+  font-size:13px;
   color:#9A8C7E;
+  height:16px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
 }
 
 .flip-card{

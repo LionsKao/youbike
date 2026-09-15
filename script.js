@@ -140,7 +140,7 @@ function flipSpan(oldText, newText, oldColor, newColor) {
     `</span></span>`;
 }
 
-function breakdownItem(cls, key, value, label, knownColor, prev) {
+function breakdownItem(cls, key, value, icon, knownColor, prev) {
   const known = value != null;
   const newText = known ? value : '--';
   const prevKnown = !!prev && prev[key] != null;
@@ -150,13 +150,13 @@ function breakdownItem(cls, key, value, label, knownColor, prev) {
   return `
       <div class="breakdown-item ${cls}">
         <div class="b-num">${flipSpan(String(oldText), String(newText), oldColor, newColor)}</div>
-        <div class="b-label">${label}</div>
+        <div class="b-label"><i class="${icon}" aria-hidden="true"></i></div>
       </div>`;
 }
 
 function breakdownRow(s, prev) {
   return `
-    <div class="breakdown-row">${breakdownItem('b-general', 'general', s.general, '一般', '#3F9C7A', prev)}${breakdownItem('b-electric', 'electric', s.electric, '電動', '#B8860B', prev)}${breakdownItem('b-dock', 'returnable', s.returnable, '可停', 'var(--sky-deep)', prev)}
+    <div class="breakdown-row">${breakdownItem('b-general', 'general', s.general, 'fa-solid fa-bicycle', '#3F9C7A', prev)}${breakdownItem('b-electric', 'electric', s.electric, 'fa-solid fa-bolt', '#B8860B', prev)}${breakdownItem('b-dock', 'returnable', s.returnable, 'fa-solid fa-square-parking', 'var(--sky-deep)', prev)}
     </div>`;
 }
 
@@ -595,6 +595,7 @@ if (isPwa) {
   document.body.classList.add('pwa-mode');
 
   const pullRefresh = document.getElementById('pullRefresh');
+  const pageContent = document.getElementById('pageContent');
   const PULL_THRESHOLD = 64;
   const PULL_MAX = 90;
   let pullStartY = null;
@@ -602,8 +603,11 @@ if (isPwa) {
   let pullRefreshing = false;
 
   function setPull(dist, animate) {
-    pullRefresh.style.transition = animate ? 'transform 0.25s ease' : 'none';
+    const transition = animate ? 'transform 0.25s ease' : 'none';
+    pullRefresh.style.transition = transition;
     pullRefresh.style.transform = `translate(-50%, ${dist - 60}px)`;
+    pageContent.style.transition = transition;
+    pageContent.style.transform = `translateY(${dist}px)`;
   }
 
   document.addEventListener('touchstart', e => {
