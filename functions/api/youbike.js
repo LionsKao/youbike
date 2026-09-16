@@ -107,7 +107,7 @@ async function getCityStations(city, token, waitUntil) {
 
   let list = await fetchCity(city, token);
   if (list === null) list = await fetchCity(city, token); // one retry on transient failure
-  if (list === null) return [];
+  if (list === null) return null; // distinct from a city that legitimately has 0 stations
 
   if (list.length > 0) {
     waitUntil(cache.put(key, new Response(JSON.stringify(list), {
@@ -154,7 +154,14 @@ export async function onRequestGet({ request, env, waitUntil }) {
   try {
     const token = await getAccessToken(env.TDX_CLIENT_ID, env.TDX_CLIENT_SECRET);
     const lists = await Promise.all(cities.map(city => getCityStations(city, token, waitUntil)));
-    stations = lists.flat();
+    if (lists.every(list => list === null)) {
+      console.error('youbike: all cities failed to fetch', cities);
+      return new Response(JSON.stringify({ error: 'upstream error' }), {
+        status: 502,
+        headers: { 'content-type': 'application/json' },
+      });
+    }
+    stations = lists.filter(list => list !== null).flat();
   } catch (err) {
     console.error('youbike: upstream error', err);
     return new Response(JSON.stringify({ error: 'upstream error' }), {

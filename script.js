@@ -103,6 +103,11 @@ function haversineMeters(lat1, lng1, lat2, lng2) {
   return 2 * R * Math.asin(Math.sqrt(a));
 }
 
+function googleMapsUrl(rawName, lat, lng) {
+  const query = rawName || `${lat},${lng}`;
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
+}
+
 function formatDistance(m) {
   if (m < 1000) return Math.round(m) + ' m';
   return (m / 1000).toFixed(1) + ' km';
@@ -123,7 +128,7 @@ function dialSvg(available, total, color) {
   return `<svg class="ring-svg" viewBox="0 0 80 80">
     <circle class="ring-bg" cx="40" cy="40" r="${r}" fill="none" stroke-width="11"/>
     <circle class="ring-val" cx="40" cy="40" r="${r}" fill="none" stroke="${color.hex}" stroke-width="11"
-      stroke-dasharray="${c}" stroke-dashoffset="${offset}" stroke-linecap="round" transform="rotate(-90 40 40)"/>
+      stroke-dasharray="${c}" stroke-dashoffset="${c}" data-offset="${offset}" stroke-linecap="round" transform="rotate(-90 40 40)"/>
   </svg>`;
 }
 
@@ -162,15 +167,33 @@ function breakdownItem(cls, key, value, icon, knownColor, prev) {
 
 function breakdownRow(s, prev) {
   return `
-    <div class="breakdown-row">${breakdownItem('b-general', 'general', s.general, 'fa-solid fa-bicycle fa-fw', '#3F9C7A', prev)}${breakdownItem('b-electric', 'electric', s.electric, 'fa-solid fa-bolt fa-fw', '#B8860B', prev)}${breakdownItem('b-dock', 'returnable', s.returnable, 'fa-solid fa-square-parking fa-fw', 'var(--sky-deep)', prev)}
+    <div class="breakdown-row">${breakdownItem('b-general', 'general', s.general, 'fa-solid fa-bicycle fa-fw', '#3F9C7A', prev)}${breakdownItem('b-electric', 'electric', s.electric, 'fa-solid fa-motorcycle fa-fw', '#B8860B', prev)}${breakdownItem('b-dock', 'returnable', s.returnable, 'fa-solid fa-square-parking fa-fw', 'var(--sky-deep)', prev)}
     </div>`;
 }
 
-function stationCard(s, featured) {
+const HTML_ESCAPE_MAP = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
+function escapeHtml(str) {
+  return String(str).replace(/[&<>"']/g, c => HTML_ESCAPE_MAP[c]);
+}
+
+function stationCard(s, featured, animate) {
   const color = ratioColor(s.available, s.total, s.returnable);
   const prev = prevValues.get(s.sno);
+
+  const nameHtml = flipSpan(
+    prev ? escapeHtml(prev.name) : '--',
+    escapeHtml(s.name),
+    'inherit', 'inherit'
+  );
+
   const distKnown = s.dist != null;
-  const subLine = `<div class="site-sub site-dist${distKnown ? '' : ' unknown'}">${distKnown ? formatDistance(s.dist) : '--'}</div>`;
+  const newDistText = distKnown ? formatDistance(s.dist) : '--';
+  const prevDistKnown = !!prev && prev.dist != null;
+  const oldDistText = prev ? (prevDistKnown ? formatDistance(prev.dist) : '--') : '--';
+  const oldDistColor = prevDistKnown ? 'var(--sky-deep)' : UNKNOWN_COLOR;
+  const newDistColor = distKnown ? 'var(--sky-deep)' : UNKNOWN_COLOR;
+  const distHtml = flipSpan(oldDistText, newDistText, oldDistColor, newDistColor);
+  const subLine = `<div class="site-sub site-dist">${distHtml}</div>`;
 
   const availKnown = s.available != null;
   const newNumText = availKnown ? displayCount(s.available) : '--';
@@ -181,8 +204,8 @@ function stationCard(s, featured) {
   const numHtml = flipSpan(String(oldNumText), String(newNumText), oldNumColor, newNumColor);
 
   return `
-    <div class="station-card${featured ? ' featured' : ''}" data-sno="${s.sno}">
-      <div class="site-name"><span>${s.name}</span></div>
+    <div class="station-card${featured ? ' featured' : ''}${animate ? ' card-enter' : ''}" data-sno="${s.sno}">
+      <div class="site-name">${nameHtml}</div>
       ${subLine}
       <div class="dial-wrap">
         <div class="dial${featured ? ' large' : ''}">
@@ -240,24 +263,33 @@ function animateCardSwap(prevRects) {
   if (pending === 0) swapAnimating = false;
 }
 
+let cardsEverRendered = false;
+
 function render(list) {
   lastList = list;
 
+  const animate = !cardsEverRendered;
+  cardsEverRendered = true;
+
   const [first, ...restAll] = list;
   featuredStation = first || null;
-  const featuredHtml = first ? stationCard(first, true) : '';
-  const restHtml = restAll.map(s => stationCard(s, false)).join('');
+  const featuredHtml = first ? stationCard(first, true, animate) : '';
+  const restHtml = restAll.map(s => stationCard(s, false, animate)).join('');
 
   cardGrid.innerHTML = featuredHtml + `<div class="card-grid-small">${restHtml}</div>`;
   revealCardGrid();
 
   prevValues = new Map(list.map(s => [s.sno, {
     available: s.available, general: s.general, electric: s.electric, returnable: s.returnable,
+    name: s.name, dist: s.dist,
   }]));
 
   requestAnimationFrame(() => {
     requestAnimationFrame(() => {
       cardGrid.querySelectorAll('.flip-card').forEach(el => el.classList.add('flipped'));
+      cardGrid.querySelectorAll('.ring-val').forEach(el => {
+        el.style.strokeDashoffset = el.dataset.offset;
+      });
     });
   });
 }
@@ -270,7 +302,7 @@ cardGrid.addEventListener('click', e => {
 
   const nameEl = e.target.closest('.site-name');
   if (nameEl) {
-    window.open(`https://www.google.com/maps/search/?api=1&query=${station.lat},${station.lng}`, '_blank');
+    location.href = googleMapsUrl(station.rawName, station.lat, station.lng);
     return;
   }
 
@@ -317,6 +349,7 @@ async function fetchLiveData() {
       const list = json.map(s => ({
         sno: s.sno,
         name: userPos ? (s.sna || '').replace(/^YouBike2\.0_/, '').replace(/\([^)]*\)/g, m => m.split('').join('⁠')) : '--',
+        rawName: (s.sna || '').replace(/^YouBike2\.0_/, 'YouBike微笑單車 2.0: '),
         lat: s.latitude,
         lng: s.longitude,
         total: s.Quantity,
@@ -334,7 +367,7 @@ async function fetchLiveData() {
     }
   }
   showDataErrorModal();
-  render([]);
+  render([placeholderStation(0), placeholderStation(1), placeholderStation(2)]);
 }
 
 function getDebugPos() {
@@ -463,8 +496,18 @@ function setLocationLoading(loading) {
   }
 }
 
+const REFRESH_COOLDOWN_MS = 3000;
+let lastRefreshAt = 0;
+
 function refreshData(onDone) {
   if (fabLocation.disabled) { if (onDone) onDone(); return; }
+  const now = Date.now();
+  if (now - lastRefreshAt < REFRESH_COOLDOWN_MS) {
+    showPillWarning(fabLocation, '請稍候再試一次');
+    if (onDone) onDone();
+    return;
+  }
+  lastRefreshAt = now;
   if (fabDebugFake) fabDebugFake.classList.remove('active');
   setLocationLoading(true);
   const finish = () => { setLocationLoading(false); if (onDone) onDone(); };
@@ -495,7 +538,7 @@ fabLocation.addEventListener('click', () => refreshData());
 const fabNavigate = document.getElementById('fabNavigate');
 fabNavigate.addEventListener('click', () => {
   if (!featuredStation) return;
-  window.open(`https://www.google.com/maps/search/?api=1&query=${featuredStation.lat},${featuredStation.lng}`, '_blank');
+  location.href = googleMapsUrl(featuredStation.rawName, featuredStation.lat, featuredStation.lng);
 });
 
 const openAppBtn = document.getElementById('openAppBtn');

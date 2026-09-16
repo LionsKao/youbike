@@ -15,13 +15,28 @@
 }
 
 *{box-sizing:border-box;}
+.visually-hidden{
+  position:absolute;
+  width:1px;
+  height:1px;
+  padding:0;
+  margin:-1px;
+  overflow:hidden;
+  clip:rect(0,0,0,0);
+  white-space:nowrap;
+  border:0;
+}
 html{
   scrollbar-gutter:stable;
   background:var(--cloud);
   height:100%;
 }
+html::-webkit-scrollbar{ width:12px; }
+html::-webkit-scrollbar-track{ background:#B9B9B9; }
+html::-webkit-scrollbar-thumb{ background:var(--asphalt); border-radius:6px; }
 body{
-  margin:0;
+  margin:0 auto;
+  max-width:480px;
   height:100dvh;
   color:var(--asphalt);
   font-family:'Manrope',sans-serif;
@@ -52,16 +67,20 @@ body{
   cursor:default;
   min-width:0;
 }
+.station-card.card-enter{ animation:card-fade-in 0.6s ease; }
+@keyframes card-fade-in{ from{ opacity:0; } to{ opacity:1; } }
 .station-card .site-name{ font-family:'Fredoka',sans-serif; font-weight:600; font-size:16px; line-height:1.4; margin-bottom:5px; text-align:center; overflow:hidden; cursor:pointer; }
-.station-card .site-name span{
+.station-card .site-name .flip-card{ display:block; width:100%; }
+.station-card .site-name .flip-card-inner{ display:grid; width:100%; }
+.station-card .site-name .flip-face,
+.station-card .site-name > span:not(.flip-card){
   display:block;
   white-space:nowrap;
   overflow:hidden;
   text-overflow:ellipsis;
 }
 .station-card .site-sub{ font-size:12px; color:#9A8C7E; margin-bottom:12px; text-align:center; }
-.station-card .site-dist{ color:var(--sky-deep); font-weight:700; }
-.station-card .site-dist.unknown{ color:#9A8C7E; }
+.station-card .site-dist{ font-weight:700; }
 
 .breakdown-row{
   display:flex;
@@ -97,7 +116,7 @@ body{
 .flip-card-inner{
   display:inline-grid;
   justify-items:center;
-  transition:transform 0.5s cubic-bezier(.45,0,.2,1);
+  transition:transform 2s cubic-bezier(.45,0,.2,1);
   -webkit-transform-style:preserve-3d;
   transform-style:preserve-3d;
 }
@@ -191,7 +210,7 @@ body{
 }
 .dial .ring-svg{ position:absolute; top:0; left:0; width:80px; height:80px; z-index:5; }
 .dial .ring-bg{ stroke:var(--line); }
-.dial .ring-val{ transition:stroke-dashoffset 0.5s ease, stroke 0.3s ease; }
+.dial .ring-val{ transition:stroke-dashoffset 0.9s cubic-bezier(.25,.1,.25,1), stroke 0.3s ease; }
 .dial .num{
   font-family:'Fredoka',sans-serif;
   font-weight:600;
@@ -246,7 +265,7 @@ footer{
   color:var(--asphalt);
   cursor:pointer;
   background:var(--sun);
-  transition:transform 0.1s ease;
+  transition:transform 0.1s ease, background-color 0.3s ease;
 }
 .fab-btn:active{ transform:scale(0.9); }
 .fab-stack:not(.fab-stack-left) .fab-btn:active{ transform:none; }
@@ -254,6 +273,8 @@ footer{
 .fab-btn.fab-openapp{ background:var(--coral); }
 .fab-btn.fab-navigate{ background:var(--sky-blue); }
 .fab-btn.is-loading{ background:#B9B9B9 !important; pointer-events:none; }
+.fab-btn.is-loading i{ animation:fab-spin 2s linear infinite; }
+@keyframes fab-spin{ from{ transform:rotate(0deg); } to{ transform:rotate(360deg); } }
 
 .fab-stack:not(.fab-stack-left) .fab-btn{ box-shadow:0 0 0 8px #fff; }
 .fab-stack:not(.fab-stack-left){ filter:url(#fab-outline); }
