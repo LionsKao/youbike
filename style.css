@@ -32,11 +32,6 @@ body{
   -webkit-user-select:none;
   user-select:none;
 }
-body.pwa-mode{
-  padding-top:calc(34px + env(safe-area-inset-top, 0px));
-  -webkit-tap-highlight-color:transparent;
-}
-
 .card-grid{
   display:flex;
   flex-direction:column;
@@ -237,9 +232,7 @@ footer{
   align-items:flex-start;
   display:none;
 }
-.fab-btn.fab-debug-pwa{ background:var(--sky); }
 .fab-btn.fab-debug-fake{ background:var(--river); }
-.fab-btn.fab-debug-pwa.active{ background:#B9B9B9; }
 .fab-btn.fab-debug-fake.active{ background:#B9B9B9; }
 .fab-btn{
   width:60px;

@@ -1,8 +1,8 @@
 # YouBike 車輛查詢
 
-顯示鄰近 YouBike 站點即時車位與租借狀況的 PWA，支援定位、QR Code 分享與一鍵導航。
+顯示鄰近 YouBike 站點即時車位與租借狀況的網頁應用，支援定位、QR Code 分享與一鍵導航。
 
-A lightweight PWA that shows nearby YouBike station availability in real time, with geolocation, QR code sharing, and one-tap navigation to Google Maps.
+A lightweight web app that shows nearby YouBike station availability in real time, with geolocation, QR code sharing, and one-tap navigation to Google Maps.
 
 線上版本：https://youbike-6n2.pages.dev/
 
@@ -15,7 +15,6 @@ A lightweight PWA that shows nearby YouBike station availability in real time, w
 - 🔄 每 30 秒自動刷新一次
 - 📷 顯示 QR Code，方便分享網站給他人
 - 🧭 一鍵在 Google Maps 開啟站點導航
-- 📱 支援加入主畫面的 PWA（standalone 模式）
 
 ## Stack
 

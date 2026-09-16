@@ -9,7 +9,6 @@ const modalTitle = document.getElementById('modalTitle');
 const modalBody = document.getElementById('modalBody');
 const modalActions = document.getElementById('modalActions');
 const fabLocation = document.getElementById('fabLocation');
-const fabDebugPwa = document.getElementById('fabDebugPwa');
 const fabDebugFake = document.getElementById('fabDebugFake');
 
 const pillWarnTooltip = document.createElement('div');
@@ -548,27 +547,10 @@ render([placeholderStation(0), placeholderStation(1), placeholderStation(2)]);
 requestLocation();
 // setInterval(() => { if (firstLoadDone) fetchLiveData(); }, REFRESH_MS);
 
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('sw.js').catch(() => {});
-  });
-}
-
 const isLocalhost = ['localhost', '127.0.0.1'].includes(location.hostname);
 
 if (isLocalhost) {
   document.querySelector('.fab-stack-left').style.display = 'flex';
-
-  if (new URLSearchParams(location.search).get('pwa') === '1') {
-    fabDebugPwa.classList.add('active');
-  }
-
-  fabDebugPwa.addEventListener('click', () => {
-    const params = new URLSearchParams(location.search);
-    if (params.get('pwa') === '1') params.delete('pwa');
-    else params.set('pwa', '1');
-    location.search = params.toString();
-  });
 
   function activateFakePos() {
     if (watchId != null) {
@@ -592,12 +574,4 @@ if (isLocalhost) {
   if (!getDebugPos()) activateFakePos();
 } else {
   document.querySelector('.fab-stack-left').remove();
-}
-
-const isPwa = window.matchMedia('(display-mode: standalone)').matches
-  || navigator.standalone === true
-  || new URLSearchParams(location.search).get('pwa') === '1';
-
-if (isPwa) {
-  document.body.classList.add('pwa-mode');
 }
