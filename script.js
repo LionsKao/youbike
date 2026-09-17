@@ -93,16 +93,6 @@ function revealCardGrid() {
   cardGrid.style.display = '';
 }
 
-function haversineMeters(lat1, lng1, lat2, lng2) {
-  const R = 6371000;
-  const toRad = d => d * Math.PI / 180;
-  const dLat = toRad(lat2 - lat1);
-  const dLng = toRad(lng2 - lng1);
-  const a = Math.sin(dLat / 2) ** 2 +
-    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) ** 2;
-  return 2 * R * Math.asin(Math.sqrt(a));
-}
-
 function googleMapsUrl(rawName, lat, lng) {
   const query = rawName || `${lat},${lng}`;
   return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
@@ -378,34 +368,6 @@ function getDebugPos() {
   return { lat, lng };
 }
 
-let watchId = null;
-let lastDistRecomputeAt = 0;
-const DIST_RECOMPUTE_MIN_MS = 1500;
-
-function recomputeDistances() {
-  if (!userPos || !lastList.length) return;
-  const now = Date.now();
-  if (now - lastDistRecomputeAt < DIST_RECOMPUTE_MIN_MS) return;
-  lastDistRecomputeAt = now;
-  const updated = lastList.map(s => ({
-    ...s,
-    dist: haversineMeters(userPos.lat, userPos.lng, s.lat, s.lng),
-  }));
-  render(updated);
-}
-
-function startWatchingPosition() {
-  if (watchId != null || getDebugPos() || !('geolocation' in navigator)) return;
-  watchId = navigator.geolocation.watchPosition(
-    pos => {
-      userPos = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-      recomputeDistances();
-    },
-    () => {},
-    { enableHighAccuracy: true, maximumAge: 3000, timeout: 10000 }
-  );
-}
-
 const GEO_GRANTED_KEY = 'youbikeGeoGranted';
 
 function markGeoGranted() {
@@ -418,7 +380,7 @@ function hasGeoGrantedBefore() {
   try { return localStorage.getItem(GEO_GRANTED_KEY) === '1'; } catch (e) { return false; }
 }
 
-function doGeolocate(onDenied, onFail, onSuccess) {
+function doGeolocate(onDenied, onFail, onSuccess, onTimeout) {
   const debugPos = getDebugPos();
   if (debugPos) {
     userPos = debugPos;
@@ -434,12 +396,14 @@ function doGeolocate(onDenied, onFail, onSuccess) {
       userPos = { lat: pos.coords.latitude, lng: pos.coords.longitude };
       markGeoGranted();
       fetchLiveData().then(() => { if (onSuccess) onSuccess(); });
-      startWatchingPosition();
     },
     err => {
       if (err.code === err.PERMISSION_DENIED) {
         clearGeoGranted();
         if (onDenied) onDenied();
+        else if (onFail) onFail();
+      } else if (err.code === err.TIMEOUT) {
+        if (onTimeout) onTimeout();
         else if (onFail) onFail();
       } else if (onFail) {
         onFail();
@@ -452,11 +416,11 @@ function doGeolocate(onDenied, onFail, onSuccess) {
 function requestLocation() {
   if (getDebugPos()) { doGeolocate(undefined, () => fetchLiveData()); return; }
   if (!('geolocation' in navigator)) { fetchLiveData(); return; }
-  if (hasGeoGrantedBefore()) { doGeolocate(showLocationBlockedModal, () => fetchLiveData()); return; }
+  if (hasGeoGrantedBefore()) { doGeolocate(showLocationBlockedModal, () => fetchLiveData(), undefined, showLocationTimeoutModal); return; }
   if ('permissions' in navigator) {
     navigator.permissions.query({ name: 'geolocation' }).then(status => {
       if (status.state === 'granted') {
-        doGeolocate(undefined, () => fetchLiveData());
+        doGeolocate(undefined, () => fetchLiveData(), undefined, showLocationTimeoutModal);
       } else if (status.state === 'denied') {
         showLocationBlockedModal();
       } else {
@@ -478,11 +442,21 @@ function showLocationBlockedModal() {
   });
 }
 
+function showLocationTimeoutModal() {
+  openModal({
+    title: '定位逾時',
+    body: '請確認 GPS 訊號後，稍後再試一次。',
+    singleButton: true,
+    confirmColor: 'var(--sun)',
+    confirmLabel: '我知道了',
+  });
+}
+
 function openLocationRequestModal(onFail) {
   openModal({
     title: '開啟定位服務',
     confirmColor: 'var(--sun)',
-    onConfirm: () => doGeolocate(showLocationBlockedModal, onFail),
+    onConfirm: () => doGeolocate(showLocationBlockedModal, onFail, undefined, showLocationTimeoutModal),
   });
 }
 
@@ -510,16 +484,18 @@ function refreshData(onDone) {
   lastRefreshAt = now;
   if (fabDebugFake) fabDebugFake.classList.remove('active');
   setLocationLoading(true);
+  render([placeholderStation(0), placeholderStation(1), placeholderStation(2)]);
   const finish = () => { setLocationLoading(false); if (onDone) onDone(); };
   const notifyUpdated = () => { setLocationLoading(false); showPillWarning(fabLocation, '已更新車輛和定位資訊'); if (onDone) onDone(); };
   const onDenied = () => { finish(); showLocationBlockedModal(); };
+  const onTimeout = () => { finish(); showPillWarning(fabLocation, '定位逾時，請稍後再試一次'); };
   if (getDebugPos()) { doGeolocate(undefined, finish, notifyUpdated); return; }
   if (!('geolocation' in navigator)) { finish(); return; }
-  if (hasGeoGrantedBefore()) { doGeolocate(onDenied, finish, notifyUpdated); return; }
+  if (hasGeoGrantedBefore()) { doGeolocate(onDenied, finish, notifyUpdated, onTimeout); return; }
   if ('permissions' in navigator) {
     navigator.permissions.query({ name: 'geolocation' }).then(status => {
       if (status.state === 'granted') {
-        doGeolocate(onDenied, finish, notifyUpdated);
+        doGeolocate(onDenied, finish, notifyUpdated, onTimeout);
       } else if (status.state === 'denied') {
         onDenied();
       } else {
@@ -596,10 +572,6 @@ if (isLocalhost) {
   document.querySelector('.fab-stack-left').style.display = 'flex';
 
   function activateFakePos() {
-    if (watchId != null) {
-      navigator.geolocation.clearWatch(watchId);
-      watchId = null;
-    }
     userPos = { lat: 25.039159775, lng: 121.50309753 };
     fetchLiveData();
     fabDebugFake.classList.add('active');
