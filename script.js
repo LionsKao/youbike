@@ -166,9 +166,21 @@ function escapeHtml(str) {
   return String(str).replace(/[&<>"']/g, c => HTML_ESCAPE_MAP[c]);
 }
 
+// Youbike "友愛接力" program rewards borrowing from a full station (no dock
+// space left) or returning to an empty station (no bikes left) with a 5 NTD
+// ride voucher — surfaced here as a floating badge, not a layout element.
+function friendlyBadgeHtml(s) {
+  if (s.available !== 0 && s.returnable !== 0) return '';
+  return `<div class="friendly-badge" role="img" aria-label="友愛接力站點，借還車可獲得騎乘券">
+        <span class="friendly-badge-ring" aria-hidden="true"></span>
+        <span class="friendly-badge-core"><i class="fa-solid fa-ticket" aria-hidden="true"></i></span>
+      </div>`;
+}
+
 function stationCard(s, featured, animate) {
   const color = ratioColor(s.available, s.total, s.returnable);
   const prev = prevValues.get(s.sno);
+  const friendlyHtml = featured ? friendlyBadgeHtml(s) : '';
 
   const nameHtml = flipSpan(
     prev ? escapeHtml(prev.name) : '--',
@@ -195,6 +207,7 @@ function stationCard(s, featured, animate) {
 
   return `
     <div class="station-card${featured ? ' featured' : ''}${animate ? ' card-enter' : ''}" data-sno="${s.sno}">
+      ${friendlyHtml}
       <div class="site-name">${nameHtml}</div>
       ${subLine}
       <div class="dial-wrap">

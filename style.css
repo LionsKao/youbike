@@ -71,7 +71,7 @@ body{
 @keyframes card-fade-in{ from{ opacity:0; } to{ opacity:1; } }
 .station-card .site-name{ font-family:'Fredoka',sans-serif; font-weight:600; font-size:16px; line-height:1.4; margin-bottom:5px; text-align:center; overflow:hidden; cursor:pointer; }
 .station-card .site-name .flip-card{ display:block; width:100%; }
-.station-card .site-name .flip-card-inner{ display:grid; width:100%; }
+.station-card .site-name .flip-card-inner{ display:grid; width:100%; justify-items:stretch; }
 .station-card .site-name .flip-face,
 .station-card .site-name > span:not(.flip-card){
   display:block;
@@ -81,6 +81,44 @@ body{
 }
 .station-card .site-sub{ font-size:12px; color:#9A8C7E; margin-bottom:12px; text-align:center; }
 .station-card .site-dist{ font-weight:700; }
+
+.friendly-badge{
+  position:absolute;
+  top:18px;
+  right:18px;
+  width:34px;
+  height:34px;
+  animation:badge-pop 0.5s cubic-bezier(.34,1.56,.64,1) both;
+}
+.friendly-badge-ring{
+  position:absolute;
+  inset:0;
+  border-radius:50%;
+  background:var(--sun);
+  animation:radar-ping 1.8s cubic-bezier(0,0,0.2,1) infinite;
+}
+.friendly-badge-core{
+  position:absolute;
+  inset:0;
+  border-radius:50%;
+  background:var(--sun);
+  color:#6B4E00;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:16px;
+}
+
+@keyframes badge-pop{
+  0%{ transform:scale(0) rotate(-20deg); opacity:0; }
+  55%{ transform:scale(1.2) rotate(8deg); opacity:1; }
+  75%{ transform:scale(0.92) rotate(-3deg); }
+  100%{ transform:scale(1) rotate(0deg); }
+}
+@keyframes radar-ping{
+  0%{ transform:scale(1); opacity:0.55; }
+  100%{ transform:scale(2.4); opacity:0; }
+}
 
 .breakdown-row{
   display:flex;
